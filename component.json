@@ -2,10 +2,11 @@
   "name": "promise",
   "repo": "then/promise",
   "description": "Bare bones Promises/A+ implementation",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "keywords": [],
   "dependencies": {
-    "then/is-promise": "*"
+    "then/is-promise": "*",
+    "timoxley/next-tick": "*"
   },
   "development": {},
   "license": "MIT",
