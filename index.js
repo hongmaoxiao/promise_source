@@ -9,9 +9,9 @@ function Promise(fn) {
   }
 
   var state = null
-    , delegating = false
-    , value = null
-    , deferreds = []
+  var delegating = false
+  var value = null
+  var deferreds = []
 
 
   this.then = function(onFulfilled, onRejected) {
