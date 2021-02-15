@@ -1,5 +1,5 @@
 var nextTick = require('next-tick')
-  , isPromise = require('is-promise')
+var isPromise = require('is-promise')
 
 module.exports = Promise
 function Promise(fn) {
