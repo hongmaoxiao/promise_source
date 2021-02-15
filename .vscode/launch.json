@@ -5,11 +5,36 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "type": "chrome",
+      "args": [
+        // "-u",
+        // "tdd",
+        "--timeout",
+        "999999",
+        "--colors",
+        "${workspaceFolder}/test"
+      ],
+      "internalConsoleOptions": "openOnSessionStart",
+      "name": "Mocha Tests",
+      "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
       "request": "launch",
-      "name": "Launch Chrome against localhost",
-      "url": "http://localhost:8080",
-      "webRoot": "${workspaceFolder}"
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "type": "pwa-node"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Run mocha",
+      "program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
+      "stopOnEntry": false,
+      "args": [
+        "--timeout",
+        "--slow 99999",
+        "${workspaceFolder}/test"
+      ],
+      "cwd": "${workspaceRoot}",
+      "runtimeExecutable": null
     }
   ]
 }
