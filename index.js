@@ -182,3 +182,34 @@ Promise.prototype.nodeify = function (callback) {
     })
   })
 }
+
+Promise.prototype.catch = function (onRejected) {
+  return this.then(null, onRejected)
+}
+
+Promise.resolve = function(value) {
+  return new Promise(function(resolve) {
+    resolve(value)
+  })
+}
+
+Promise.reject = function(value) {
+  return new Promise(function(resolve, reject) {
+    reject(value)
+  })
+}
+
+Promise.cast = function(value) {
+  if (value instanceof Promise) {
+    return value
+  }
+  return Promise.resolve(value)
+}
+
+Promise.race = function(values) {
+  return new Promise(function(resolve, reject) {
+    values.map(function(value){
+      Promise.cast(value).then(resolve, reject)
+    })
+  })
+}
