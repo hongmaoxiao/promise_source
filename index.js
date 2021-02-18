@@ -168,7 +168,7 @@ Promise.prototype.done = function(onFulfilled, onRejected) {
 }
 
 Promise.prototype.nodeify = function (callback) {
-  if (callback == null || typeof callback === 'undefined') {
+  if (!(typeof callback === 'function')) {
     return this
   }
 
