@@ -81,12 +81,16 @@ Promise.from = function (value) {
   return new ValuePromise(value)
 }
 
-Promise.denodeify = function(fn) {
+Promise.denodeify = function(fn, argumentCount) {
+  argumentCount = argumentCount || Infinity
   return function () {
     var self = this
     var args = Array.prototype.slice(arguments)
 
     return new Promise(function(resolve, reject) {
+      while (args.length && args.length > argumentCount) {
+        args.pop()
+      }
       args.push(function(err, res) {
         if (err) {
           reject(err)
