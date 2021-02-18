@@ -36,7 +36,7 @@ var UNDEFINED = new ValuePromise(undefined)
 var ZERO = new ValuePromise(0)
 var EMPTYSTRING = new ValuePromise('')
 
-Promise.from = Promise.cast = function (value) {
+Promise.resolve = function (value) {
   if (value instanceof Promise) {
     return value
   }
@@ -79,6 +79,13 @@ Promise.from = Promise.cast = function (value) {
   }
 
   return new ValuePromise(value)
+}
+
+Promise.from = Promise.cast = function(value) {
+  var err = new Error('Promise.from and Promise.cast are deprecated, use Promise.resolve instead')
+  err.name = 'Warnning'
+  console.warn(err.stack)
+  return Promise.resolve(value)
 }
 
 Promise.denodeify = function(fn, argumentCount) {
@@ -125,7 +132,14 @@ Promise.nodeify = function(fn) {
 }
 
 Promise.all = function () {
-  var args = Array.prototype.slice.call(arguments.length === 1 && Array.isArray(arguments[0]) ? arguments[0] : arguments)
+  var callWithArray = arguments.length === 1 && Array.isArray(arguments[0])
+  var args = Array.prototype.slice.call(callWithArray ? arguments[0] : arguments)
+
+  if (!callWithArray) {
+    var err = new Error('Promise.all should be called with a single array, calling it with multiple arguments is deprecated')
+    err.name = 'Warning'
+    console.warn(err.stack)
+  }
 
   return new Promise(function(resolve, reject) {
     if (args.length === 0) {
@@ -156,6 +170,21 @@ Promise.all = function () {
   })
 }
 
+
+Promise.reject = function(value) {
+  return new Promise(function(resolve, reject) {
+    reject(value)
+  })
+}
+
+Promise.race = function(values) {
+  return new Promise(function(resolve, reject) {
+    values.map(function(value){
+      Promise.resolve(value).then(resolve, reject)
+    })
+  })
+}
+
 /* Prototype Methods */
 
 Promise.prototype.done = function(onFulfilled, onRejected) {
@@ -168,7 +197,7 @@ Promise.prototype.done = function(onFulfilled, onRejected) {
 }
 
 Promise.prototype.nodeify = function (callback) {
-  if (typeof callback === 'function') {
+  if (typeof callback !== 'function') {
     return this
   }
 
@@ -183,26 +212,6 @@ Promise.prototype.nodeify = function (callback) {
   })
 }
 
-Promise.prototype.catch = function (onRejected) {
+Promise.prototype['catch'] = function (onRejected) {
   return this.then(null, onRejected)
-}
-
-Promise.resolve = function(value) {
-  return new Promise(function(resolve) {
-    resolve(value)
-  })
-}
-
-Promise.reject = function(value) {
-  return new Promise(function(resolve, reject) {
-    reject(value)
-  })
-}
-
-Promise.race = function(values) {
-  return new Promise(function(resolve, reject) {
-    values.map(function(value){
-      Promise.cast(value).then(resolve, reject)
-    })
-  })
 }
