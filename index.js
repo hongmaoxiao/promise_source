@@ -36,7 +36,7 @@ var UNDEFINED = new ValuePromise(undefined)
 var ZERO = new ValuePromise(0)
 var EMPTYSTRING = new ValuePromise('')
 
-Promise.from = function (value) {
+Promise.from = Promise.cast = function (value) {
   if (value instanceof Promise) {
     return value
   }
@@ -197,13 +197,6 @@ Promise.reject = function(value) {
   return new Promise(function(resolve, reject) {
     reject(value)
   })
-}
-
-Promise.cast = function(value) {
-  if (value instanceof Promise) {
-    return value
-  }
-  return Promise.resolve(value)
 }
 
 Promise.race = function(values) {

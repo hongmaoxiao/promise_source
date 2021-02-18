@@ -26,10 +26,69 @@ describe('extensions', function () {
       })
     })
     describe('if passed a thenable', function () {
+      describe('using then', function () {
+        it('assimilates it', function (done) {
+          var i = 2
+          var promise = Promise.from(thenable)
+          var promiseRejected = Promise.from(thenableRejected)
+          assert(promise instanceof Promise)
+          assert(promiseRejected instanceof Promise)
+          promise.then(function (res) {
+            assert(res === sentinel)
+            if (0 === --i) done()
+          })
+          .then(null, done)
+          promiseRejected.then(null, function (err) {
+            assert(err === sentinel)
+            if (0 === --i) done()
+          })
+          .then(null, done)
+        })
+      })
+      describe('using catch', function () {
+        it('assimilates it', function (done) {
+          var i = 2
+          var promise = Promise.from(thenable)
+          var promiseRejected = Promise.from(thenableRejected)
+          assert(promise instanceof Promise)
+          assert(promiseRejected instanceof Promise)
+          promise.then(function (res) {
+            assert(res === sentinel)
+            if (0 === --i) done()
+          })
+          .catch(done)
+          promiseRejected.catch(function (err) {
+            assert(err === sentinel)
+            if (0 === --i) done()
+          })
+          .catch(done)
+        })
+      })
+    })
+    describe('if passed a value', function () {
+      it('wraps it in a promise', function (done) {
+        var promise = Promise.from(sentinel)
+          .then(function (res) {
+            assert(res === sentinel)
+            done()
+          })
+        assert(promise instanceof Promise)
+        assert(Promise.from(sentinel) instanceof Promise)
+        assert(Promise.from(sentinel).constructor === Promise)
+      })
+    })
+  })
+  describe('Promise.cast', function () {
+    describe('if passed a true promise', function () {
+      it('returns it directly', function () {
+        assert(promise === Promise.cast(promise))
+      })
+    })
+    describe('if passed a thenable', function () {
       it('assimilates it', function (done) {
         var i = 2
-        var promise = Promise.from(thenable)
-        var promiseRejected = Promise.from(thenableRejected)
+        var promise = Promise.cast(thenable)
+        var promiseRejected = Promise.cast(thenableRejected)
         assert(promise instanceof Promise)
         assert(promiseRejected instanceof Promise)
         promise.then(function (res) {
@@ -46,18 +105,18 @@ describe('extensions', function () {
     })
     describe('if passed a value', function () {
       it('wraps it in a promise', function (done) {
-        var promise = Promise.from(sentinel)
+        var promise = Promise.cast(sentinel)
           .then(function (res) {
             assert(res === sentinel)
             done()
           })
         assert(promise instanceof Promise)
-        assert(Promise.from(sentinel) instanceof Promise)
-        assert(Promise.from(sentinel).constructor === Promise)
+        assert(Promise.cast(sentinel) instanceof Promise)
+        assert(Promise.cast(sentinel).constructor === Promise)
       })
     })
   })
-  describe('Promise.denodeify(fn, [argumentCount])', function () {
+  describe('Promise.denodeify(fn)', function () {
     it('returns a function that uses promises instead of callbacks', function (done) {
       function wrap(val, key, callback) {
         return callback(null, {val: val, key: key})
@@ -78,18 +137,6 @@ describe('extensions', function () {
       pfail(promise, 'foo')
         .then(null, function (err) {
           assert(err === sentinel)
-          done()
-        })
-    })
-    it('with an argumentCount it ignores extra arguments', function (done) {
-      function wrap(val, key, callback) {
-        return callback(null, {val: val, key: key})
-      }
-      var pwrap = Promise.denodeify(wrap, 2)
-      pwrap(sentinel, 'foo', 'wtf')
-        .then(function (wrapper) {
-          assert(wrapper.val === sentinel)
-          assert(wrapper.key === 'foo')
           done()
         })
     })
