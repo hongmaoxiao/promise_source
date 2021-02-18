@@ -101,6 +101,20 @@ describe('extensions', function () {
           done()
         })
     })
+    it('passes through the `this` argument', function (done) {
+      var ctx = {}
+      var add = Promise.nodeify(function (a, b) {
+        return Promise.resolve(a)
+          .then(function (a) {
+            return a + b
+          })
+      })
+      add.call(ctx, 1, 2, function (err, res) {
+        assert(res === 3)
+        assert(this === ctx)
+        done()
+      })
+    })
   })
   describe('Promise.all(...)', function () {
     describe('an array', function () {
@@ -219,6 +233,37 @@ describe('extensions', function () {
           assert(res === 3)
           done()
         })
+    })
+    it('accepts a `context` argument', function (done) {
+      var ctx = {}
+      function add(a, b, callback) {
+        return Promise.resolve(a)
+          .then(function (a) {
+            return a + b
+          })
+          .nodeify(callback, ctx)
+      }
+      add(1, 2, function (err, res) {
+        assert(res === 3)
+        assert(this === ctx)
+        done()
+      })
+    })
+  })
+
+  describe('inheritance', function () {
+    it('allows its prototype methods to act upon foreign constructors', function () {
+      function Awesome(fn) {
+        if (!(this instanceof Awesome)) return new Awesome(fn)
+        Promise.call(this, fn)
+      }
+      Awesome.prototype = Object.create(Promise.prototype)
+      Awesome.prototype.constructor = Awesome
+
+      var awesome = new Awesome(function () {})
+
+      assert(awesome.constructor === Awesome)
+      assert(awesome.then(function () {}).constructor === Awesome)
     })
   })
 })
