@@ -13,7 +13,7 @@ Promise.denodeify = function(fn, argumentCount) {
   argumentCount = argumentCount || Infinity
   return function () {
     var self = this
-    var args = Array.prototype.slice(arguments)
+    var args = Array.prototype.slice.call(arguments, 0, argumentCount > 0 ? argumentCount : 0)
 
     return new Promise(function(resolve, reject) {
       while (args.length && args.length > argumentCount) {
