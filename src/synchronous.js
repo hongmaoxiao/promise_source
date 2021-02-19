@@ -20,7 +20,7 @@ Promise.enableSynchronous = function() {
     if (this._state === 3) {
       return this._value.getValue();
     }
-    
+
     if (!this.isFulfilled()) {
       throw new Error('Cannot get a value of an unfulfilled promise.');
     }
@@ -28,6 +28,10 @@ Promise.enableSynchronous = function() {
   }
 
   Promise.prototype.getReason = function() {
+    if (this._state === 3) {
+      return this._value.getReason();
+    }
+    
     if (!this.isRejected()) {
       throw new Error('Cannot get a rejection reason of a non-rejected promise.');
     }
