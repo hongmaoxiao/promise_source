@@ -5,15 +5,15 @@ var Promise = require('./core.js')
 module.exports = Promise
 Promise.enableSynchronous = function() {
   Promise.prototype.isPending = function() {
-    return this._state === 0
+    return this.getState() === 0
   }
 
   Promise.prototype.isFulfilled = function() {
-    return this._state === 1
+    return this.getState() === 1
   }
 
   Promise.prototype.isRejected = function() {
-    return this._state === 2
+    return this.getState() === 2
   }
 
   Promise.prototype.getValue = function() {
@@ -31,10 +31,18 @@ Promise.enableSynchronous = function() {
   }
 }
 
+Promise.prototype.getState = function() {
+  if (this._state === 3 && this._value instanceof Promise) {
+    return this._value.getState()
+  }
+  return this._state
+}
+
 Promise.disableSynchronous = function() {
   Promise.prototype.isPending  = undefined
   Promise.prototype.isFulfilled  = undefined
   Promise.prototype.isRejected  = undefined
   Promise.prototype.getValue  = undefined
   Promise.prototype.getReason  = undefined
+  Promise.prototype.getState  = undefined
 }
