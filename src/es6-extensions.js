@@ -3,38 +3,24 @@
 //This file contains then/promise specific extensions to the core promise API
 
 var Promise = require('./core.js')
-var asap = require('asap/raw')
-
 
 module.exports = Promise
 
 /* Static Functions */
 
-function ValuePromise(value) {
-  this.then = function (onFulfilled) {
-    if (typeof onFulfilled !== 'function') {
-      return this
-    }
-    return new Promise(function(resolve, reject) {
-      asap(function() {
-        try {
-          resolve(onFulfilled(value))
-        } catch (ex) {
-          reject(ex)
-        }
-      })
-    })
-  }
+var TRUE = valuePromise(true)
+var FALSE = valuePromise(false)
+var NULL = valuePromise(null)
+var UNDEFINED = valuePromise(undefined)
+var ZERO = valuePromise(0)
+var EMPTYSTRING = valuePromise('')
+
+function valuePromise(value) {
+  var p = new Promise(Promise._noop)
+  p._state = 1
+  p._value = value
+  return p
 }
-
-ValuePromise.prototype = Promise.prototype
-
-var TRUE = new ValuePromise(true)
-var FALSE = new ValuePromise(false)
-var NULL = new ValuePromise(null)
-var UNDEFINED = new ValuePromise(undefined)
-var ZERO = new ValuePromise(0)
-var EMPTYSTRING = new ValuePromise('')
 
 Promise.resolve = function (value) {
   if (value instanceof Promise) {
@@ -78,7 +64,7 @@ Promise.resolve = function (value) {
     }
   }
 
-  return new ValuePromise(value)
+  return new valuePromise(value)
 }
 
 Promise.all = function (arr) {
@@ -92,10 +78,29 @@ Promise.all = function (arr) {
 
     function res(i, val) {
       if (val && (typeof val === 'object' || typeof val === 'function')) {
-        var then = val.then
-        if (typeof then === 'function') {
-          then.call(val, function(val) { res(i, val) }, reject)
+        if (val instanceof Promise && val.then === Promise.prototype.then) {
+          while (val._state === 3) {
+            val = val._value
+          }
+          if (val._state === 1) {
+            return res(i, val._value)
+          }
+          if (val._state === 2) {
+            return reject(val._value)
+          }
+          val.then(function(val) {
+            res(i, val)
+          }, reject)
           return
+        } else {
+          var then = val.then
+          if (typeof then === 'function') {
+            var p = new Promise(then.bind(val))
+            p.then(function(val) {
+              res(i, val)
+            }, reject)
+            return
+          }
         }
       }
       args[i] = val

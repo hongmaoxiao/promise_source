@@ -70,6 +70,8 @@ function Promise(fn) {
   doResolve(fn, this)
 }
 
+Promise._noop = noop;
+
 Promise.prototype.then = function (onFulfilled, onRejected) {
   if (this.constructor !== Promise) {
     return safeThen(this, onFulfilled, onRejected)
