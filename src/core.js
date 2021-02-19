@@ -43,7 +43,7 @@ function tryCallOne(fn, a) {
 
 function tryCallTwo(fn, a, b) {
   try {
-    return fn(a, b)
+    fn(a, b)
   } catch (ex) {
     LAST_ERROR = ex
     return IS_ERROR
@@ -70,103 +70,94 @@ function Promise(fn) {
   doResolve(fn, this)
 }
 
-Promise.prototype._safeThen = function (onFulfilled, onRejected) {
-  var self = this
-  return new this.constructor(function(resolve, reject){
-    var res = new Promise(noop)
-    res.then(resolve, reject)
-    self._handle(new Handler(onFulfilled, onRejected, res))
-  })
-}
-
 Promise.prototype.then = function (onFulfilled, onRejected) {
   if (this.constructor !== Promise) {
-    return this._safeThen(onFulfilled, onRejected)
+    return safeThen(this, onFulfilled, onRejected)
   }
   var res = new Promise(noop)
-  this._handle(new Handler(onFulfilled, onRejected, res))
+  handle(this, new Handler(onFulfilled, onRejected, res))
   return res
 }
-Promise.prototype._handle = function(deferred) {
-  if (this._state === 3) {
-    this._value._handle(deferred)
+function safeThen(self, onFulfilled, onRejected) {
+  return new self.constructor(function(resolve, reject){
+    var res = new Promise(noop)
+    res.then(resolve, reject)
+    handle(self, new Handler(onFulfilled, onRejected, res))
+  })
+}
+function handle(self, deferred) {
+  while (self._state === 3) {
+    self = self._value
+  }
+  if (self._state === 0) {
+    self._deferreds.push(deferred)
     return
   }
-  if (this._state === 0) {
-    this.deferreds.push(deferred)
-    return
-  }
-  var state = this._state
-  var value = this._value
   asap(function() {
-    var cb = state === 1 ? deferred.onFulfilled : deferred.onRejected
+    var cb = self._state === 1 ? deferred.onFulfilled : deferred.onRejected
     if (cb === null) {
-      (state === 1 ? deferred.resolve(value) : deferred.reject(value))
+      if (self._state === 1) {
+        resolve(deferred.promise, self._value)
+      } else {
+        reject(deferred.promise, self._value)
+      }
       return
     }
-    var ret = tryCallOne(cb, value)
+    var ret = tryCallOne(cb, self._value)
     if (ret === IS_ERROR) {
-      deferred.promise._reject(LAST_ERROR)
+      reject(deferred.promise, LAST_ERROR)
     } else {
-      deferred.promise._resolve(ret)
+      resolve(deferred.promise, ret)
     }
   })
 }
-Promise.prototype._resolve = function(newValue) {
+function resolve(self, newValue) {
   //Promise Resolution Procedure: https://github.com/promises-aplus/promises-spec#the-promise-resolution-procedure
-  if (newValue === this) {
-    throw new TypeError('A promise cannot be resolved with itself.')
+  if (newValue === self) {
+    return reject(
+      self,
+      new TypeError('A promise cannot be resolved with itself.')
+    )
   }
   if (newValue && (typeof newValue === 'object' || typeof newValue === 'function')) {
     var then = getThen(newValue)
     if (then === IS_ERROR) {
-      return this._reject(LAST_ERROR)
+      return reject(self, LAST_ERROR)
     }
     if (newValue instanceof Promise
-      && newValue._handle === this._handle
-      && then === this.then) {
-      this._state = 3
-      this._value = newValue
-      for (let i = 0; i < this._deferreds.length; i++) {
-        newValue._handle(this._deferreds[i])
-      }
+      && then === self.then) {
+      self._state = 3
+      self._value = newValue
+      finale(self)
       return
     } else if (typeof then === 'function') {
-      doResolve(then.bind(newValue), this)
+      doResolve(then.bind(newValue), self)
       return
     }
   }
-  this._state = 1
-  this._value = newValue
-  this._finale()
+  self._state = 1
+  self._value = newValue
+  finale(self)
 }
 
-Promise.prototype._reject = function(newValue) {
-  this._state = 2
-  this._value = newValue
-  this._finale()
+function reject(self, newValue) {
+  self._state = 2
+  self._value = newValue
+  finale(self)
 }
 
 
-Promise.prototype._finale = function() {
-  for (let i = 0; i < this._deferreds.length; i++) {
-    this._handle(this._deferreds[i])
-    this._deferreds = null
+function finale(self) {
+  for (let i = 0; i < self._deferreds.length; i++) {
+    handle(self, self._deferreds[i])
   }
+  self._deferreds = null
 }
 
 function Handler(onFulfilled, onRejected, promise) {
   this.onFulfilled = typeof onFulfilled === 'function' ? onFulfilled : null
   this.onRejected = typeof onRejected === 'function' ? onRejected : null
   this.promise = promise
-}
-
-Handler.prototype.resolve = function(value) {
-  this.promise._resolve(value)
-}
-
-Handler.prototype.reject = function(value) {
-  this.promise._reject(value)
 }
 
 /**
@@ -183,16 +174,16 @@ function doResolve(fn, promise) {
       return
     }
     done = true
-    promise._resolve(value)
+    resolve(promise, value)
   }, function(reason){
     if (done) {
       return
     }
     done = true
-    promise._reject(reason)
+    reject(promise, reason)
   })
   if (!done && res === IS_ERROR) {
     done = true
-    promise._reject(LAST_ERROR)
+    reject(promise, LAST_ERROR)
   }
 }
