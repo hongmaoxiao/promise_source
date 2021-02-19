@@ -82,10 +82,6 @@ Promise.resolve = function (value) {
 }
 
 Promise.all = function (arr) {
-  if (arguments.length !== 1 || !Array.isArray(arr)) {
-    return variadicAll.apply(this, arguments)
-  }
-
   var args = Array.prototype.slice.call(arr)
 
   return new Promise(function(resolve, reject) {
@@ -113,15 +109,6 @@ Promise.all = function (arr) {
   })
 }
 
-function variadicAll() {
-  var err = new Error('Promise.all should be called with a single array, calling it with multiple arguments is deprecated')
-  err.name = 'Warning'
-  console.warn(err.stack)
-
-  return Promise.all(Array.prototype.slice.call(arguments))
-}
-
-
 Promise.reject = function(value) {
   return new Promise(function(resolve, reject) {
     reject(value)
@@ -130,7 +117,7 @@ Promise.reject = function(value) {
 
 Promise.race = function(values) {
   return new Promise(function(resolve, reject) {
-    values.map(function(value){
+    values.forEach(function(value){
       Promise.resolve(value).then(resolve, reject)
     })
   })

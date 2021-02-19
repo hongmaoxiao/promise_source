@@ -4,6 +4,17 @@ var asap = require('asap/raw')
 
 function noop() {}
 
+var thenError = null
+var IS_ERROR = {}
+function getThen(obj) {
+  try {
+    return obj.then
+  } catch (ex) {
+    thenError = ex
+    return IS_ERROR
+  }
+}
+
 module.exports = Promise
 function Promise(fn) {
   if (typeof this !== 'object') {
@@ -41,8 +52,6 @@ Promise.prototype.then = function (onFulfilled, onRejected) {
   this._handle(new Handler(onFulfilled, onRejected, res))
   return res
 }
-
-
 Promise.prototype._handle = function(deferred) {
   if (this._state === 3) {
     this._value._handle(deferred)
