@@ -71,6 +71,8 @@ function Promise(fn) {
   doResolve(fn, this)
 }
 
+Promise._onHandle = null;
+Promise._onReject = null;
 Promise._noop = noop;
 
 Promise.prototype.then = function (onFulfilled, onRejected) {
@@ -91,6 +93,9 @@ function safeThen(self, onFulfilled, onRejected) {
 function handle(self, deferred) {
   while (self._state === 3) {
     self = self._value
+  }
+  if (Promise._onHandle) {
+    Promise._onHandle(self)
   }
   if (self._state === 0) {
     if (self._deferredState === 0) {
@@ -161,6 +166,9 @@ function resolve(self, newValue) {
 function reject(self, newValue) {
   self._state = 2
   self._value = newValue
+  if (Promise._onReject) {
+    Promise._onReject(self, newValue)
+  }
   finale(self)
 }
 
