@@ -43,7 +43,7 @@ Promise.prototype.getState = function() {
   if (this._state === 3) {
     return this._value.getState()
   }
-  if (this._state === -1) {
+  if (this._state === -1 || this._state === -2) {
     return 0
   }
   return this._state

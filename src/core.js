@@ -59,7 +59,8 @@ function Promise(fn) {
     throw new TypeError('not a function')
   }
 
-  this._state = -1
+  this._deferredState = 0
+  this._state = 0
   this._value = null
   this._deferreds = null
 
@@ -91,12 +92,17 @@ function handle(self, deferred) {
   while (self._state === 3) {
     self = self._value
   }
-  if (self._state === -1) {
-    self._state = 0
-    self._deferreds = [deferred]
-    return
-  }
   if (self._state === 0) {
+    if (self._deferredState === 0) {
+      self._deferredState = 1
+      self._deferreds = deferred
+      return
+    }
+    if (self._deferredState === 1) {
+      self._deferredState = 2
+      self._deferreds = [self._deferreds, deferred]
+      return
+    }
     self._deferreds.push(deferred)
     return
   }
@@ -155,7 +161,11 @@ function reject(self, newValue) {
 
 
 function finale(self) {
-  if (self._deferreds) {
+  if (self._deferredState === 1) {
+    handle(self, self._deferreds)
+    self._deferreds = null
+  }
+  if (self._deferredState === 2) {
     for (let i = 0; i < self._deferreds.length; i++) {
       handle(self, self._deferreds[i])
     }
