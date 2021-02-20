@@ -122,7 +122,7 @@ Promise.all = function (arr) {
         resolve(args)
       }
     }
-    for (let i = 0; i < args.length; i++) {
+    for (var i = 0; i < args.length; i++) {
       res(i, args[i])
     }
   })

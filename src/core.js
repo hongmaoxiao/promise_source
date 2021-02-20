@@ -179,7 +179,7 @@ function finale(self) {
     self._deferreds = null
   }
   if (self._deferredState === 2) {
-    for (let i = 0; i < self._deferreds.length; i++) {
+    for (var i = 0; i < self._deferreds.length; i++) {
       handle(self, self._deferreds[i])
     }
     self._deferreds = null
