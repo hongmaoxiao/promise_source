@@ -106,6 +106,10 @@ function handle(self, deferred) {
     self._deferreds.push(deferred)
     return
   }
+  handleResolved(self, deferred)
+}
+
+function handleResolved(self, deferred) {
   asap(function() {
     var cb = self._state === 1 ? deferred.onFulfilled : deferred.onRejected
     if (cb === null) {
@@ -124,6 +128,7 @@ function handle(self, deferred) {
     }
   })
 }
+
 function resolve(self, newValue) {
   //Promise Resolution Procedure: https://github.com/promises-aplus/promises-spec#the-promise-resolution-procedure
   if (newValue === self) {
